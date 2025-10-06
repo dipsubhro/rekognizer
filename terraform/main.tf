@@ -93,6 +93,12 @@ resource "aws_lambda_function" "image_analyzer_lambda" {
   runtime       = "python3.9"
   timeout       = 30
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      GEMINI_API_KEY = var.gemini_api_key
+    }
+  }
 }
 
 # ==============================================================================

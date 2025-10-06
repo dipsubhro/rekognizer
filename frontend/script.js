@@ -164,37 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }, index * 100); // Stagger animation by 100ms
     });
 
-    // Call Gemini API with the detected labels
-    let geminiDescription = "";
-    if (data.labels && data.labels.length > 0) {
-      try {
-        const geminiApiKey = "YOUR_GEMINI_API_KEY"; // Replace with your actual Gemini API key or use a build process to inject it.
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
-        const prompt = `Based on these detected objects in an image: ${data.labels.join(
-          ", "
-        )}. Please provide a natural, descriptive sentence about what this image likely contains. Keep it concise.`;
-        const payload = {
-          contents: [{ parts: [{ text: prompt }] }],
-        };
-        const geminiRes = await fetch(geminiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (geminiRes.ok) {
-          const geminiData = await geminiRes.json();
-          geminiDescription =
-            geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-            "No description generated.";
-        } else {
-          geminiDescription = "Unable to generate description at this time.";
-        }
-      } catch (e) {
-        geminiDescription = "Unable to generate description at this time.";
-      }
-    } else {
-      geminiDescription = "Could not detect any labels with high confidence.";
-    }
+    // Use the description from the backend
+    const geminiDescription = data.description || "No description available.";
     descriptionEl.textContent = geminiDescription;
     showNotification("Analysis completed successfully!", "success");
   }
@@ -208,12 +179,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // Create notification element
     const notification = document.createElement("div");
     notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-      <div class="notification-content">
-        <i class="fas ${getNotificationIcon(type)}"></i>
-        <span>${message}</span>
-      </div>
-    `;
+
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "notification-content";
+
+    const icon = document.createElement("i");
+    icon.className = `fas ${getNotificationIcon(type)}`;
+
+    const messageSpan = document.createElement("span");
+    messageSpan.textContent = message;
+
+    contentDiv.appendChild(icon);
+    contentDiv.appendChild(messageSpan);
+    notification.appendChild(contentDiv);
 
     // Add notification styles
     notification.style.cssText = `
@@ -233,8 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     // Add notification content styles
-    const content = notification.querySelector(".notification-content");
-    content.style.cssText = `
+    contentDiv.style.cssText = `
       display: flex;
       align-items: center;
       gap: 0.75rem;
@@ -243,7 +220,6 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     // Add icon styles
-    const icon = notification.querySelector("i");
     icon.style.color = getNotificationColor(type);
 
     // Add to page

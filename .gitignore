@@ -4,6 +4,7 @@
 
 # Local Terraform configuration
 .terraform/
+*.tfvars
 
 # Python virtual environment
 venv/

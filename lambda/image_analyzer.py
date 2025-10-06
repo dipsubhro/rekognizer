@@ -2,6 +2,7 @@ import json
 import boto3
 import base64
 import os
+import urllib.request
 
 # Initialize AWS client
 rekognition = boto3.client('rekognition')
@@ -48,6 +49,38 @@ def lambda_handler(event, context):
             }
 
         # Return only the detected labels
+        # 2. Call Gemini API to generate a description
+        description = "Could not generate description."
+        if labels:
+            try:
+                prompt = f"Based on these detected objects in an image: {', '.join(labels)}. Please provide a natural, descriptive sentence about what this image likely contains. Keep it concise."
+                
+                request_body = {
+                    "contents": [{
+                        "parts": [{"text": prompt}]
+                    }]
+                }
+                
+                data = json.dumps(request_body).encode('utf-8')
+                
+                # Add API key to URL
+                url_with_key = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
+                
+                req = urllib.request.Request(
+                    url_with_key,
+                    data=data,
+                    headers={'Content-Type': 'application/json'}
+                )
+                
+                with urllib.request.urlopen(req) as response:
+                    response_body = response.read().decode('utf-8')
+                    gemini_response = json.loads(response_body)
+                    description = gemini_response.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '').strip()
+                    
+            except Exception as gemini_error:
+                print(f"Gemini API Error: {str(gemini_error)}")
+                description = "Error generating description."
+
         return {
             'statusCode': 200,
             'headers': {
@@ -56,7 +89,8 @@ def lambda_handler(event, context):
                 'Access-Control-Allow-Methods': 'OPTIONS,POST'
             },
             'body': json.dumps({
-                'labels': labels
+                'labels': labels,
+                'description': description
             })
         }
 
