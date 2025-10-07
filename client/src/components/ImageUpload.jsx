@@ -128,7 +128,7 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
                         {!isAnalyzing && (
                             <button
                                 onClick={clearImage}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                                className="absolute -top-2 -right-2 bg-primary text-black p-1 rounded-full hover:bg-primary/80 transition-colors"
                             >
                                 <X size={16} />
                             </button>

@@ -13,7 +13,7 @@ const AnalysisResults = ({ results, isLoading, error }) => {
 
     if (error) {
         return (
-            <div className="w-full max-w-xl mx-auto p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-red-200 text-center">
+            <div className="w-full max-w-xl mx-auto p-4 bg-primary/10 border border-primary/50 rounded-lg text-primary text-center">
                 <p>{error}</p>
             </div>
         );
