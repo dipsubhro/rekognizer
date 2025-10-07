@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const labelsEl = document.getElementById("labels");
 
   const API_ENDPOINT =
-    "https://7icqxq8ai1.execute-api.ap-south-1.amazonaws.com/v1/analyze";
+    "https://2kp8bnydjd.execute-api.ap-south-1.amazonaws.com/v1/analyze";
 
   let base64Image = null;
 
