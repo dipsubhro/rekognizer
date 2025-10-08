@@ -5,7 +5,7 @@ import Webcam from 'react-webcam';
 const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
     const [dragActive, setDragActive] = useState(false);
     const [preview, setPreview] = useState(null);
-    const [isCameraMode, setIsCameraMode] = useState(false);
+    const [isCameraMode, setIsCameraMode] = useState(true); // Default to true
     const inputRef = useRef(null);
     const webcamRef = useRef(null);
 
@@ -51,6 +51,7 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
         reader.onload = (e) => {
             setPreview(e.target.result);
             onImageSelect(e.target.result);
+            setIsCameraMode(false); // Switch to preview mode
         };
         reader.readAsDataURL(file);
     };
@@ -62,106 +63,119 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
         if (inputRef.current) {
             inputRef.current.value = "";
         }
+        setIsCameraMode(true); // Go back to camera
     };
 
     const capture = useCallback(() => {
         const imageSrc = webcamRef.current.getScreenshot();
         setPreview(imageSrc);
         onImageSelect(imageSrc);
+        setIsCameraMode(false);
     }, [webcamRef, onImageSelect]);
 
     const toggleMode = () => {
         setIsCameraMode(!isCameraMode);
-        clearImage();
+        if (!isCameraMode) {
+            clearImage();
+        }
     };
 
     return (
-        <div className="w-full max-w-xl mx-auto mb-8">
-            <div className="flex justify-end mb-2">
-                <button
-                    onClick={toggleMode}
-                    className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-                    disabled={isAnalyzing}
-                >
-                    {isCameraMode ? (
-                        <>
-                            <Upload size={16} />
-                            Switch to Upload
-                        </>
-                    ) : (
-                        <>
-                            <Camera size={16} />
-                            Use Camera
-                        </>
-                    )}
-                </button>
-            </div>
+        <div className="w-full h-full relative bg-black">
+            {/* Hidden Input */}
+            <input
+                ref={inputRef}
+                type="file"
+                className="hidden"
+                accept="image/png, image/jpeg, image/jpg, image/webp"
+                onChange={handleChange}
+                disabled={isAnalyzing}
+            />
 
-            <div
-                className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors overflow-hidden
-          ${dragActive ? "border-primary bg-primary/10" : "border-gray-700 bg-surface"}
-          ${!isCameraMode && !preview ? "hover:border-gray-500 cursor-pointer" : ""}
-          ${preview ? "border-primary" : ""}
-        `}
-                onDragEnter={!isCameraMode ? handleDrag : undefined}
-                onDragLeave={!isCameraMode ? handleDrag : undefined}
-                onDragOver={!isCameraMode ? handleDrag : undefined}
-                onDrop={!isCameraMode ? handleDrop : undefined}
-                onClick={() => !isCameraMode && !preview && inputRef.current?.click()}
-            >
-                <input
-                    ref={inputRef}
-                    type="file"
-                    className="hidden"
-                    accept="image/png, image/jpeg, image/jpg, image/webp"
-                    onChange={handleChange}
-                    disabled={isAnalyzing}
-                />
+            {/* Camera View */}
+            {isCameraMode && (
+                <div className="absolute inset-0 z-0">
+                    <Webcam
+                        audio={false}
+                        ref={webcamRef}
+                        screenshotFormat="image/jpeg"
+                        className="w-full h-full object-cover"
+                        videoConstraints={{ facingMode: "environment" }} // Use back camera on mobile if available
+                    />
+                </div>
+            )}
 
-                {preview ? (
-                    <div className="relative h-64 flex items-center justify-center">
-                        <img
-                            src={preview}
-                            alt="Preview"
-                            className="max-h-full max-w-full rounded object-contain"
-                        />
-                        {!isAnalyzing && (
-                            <button
-                                onClick={clearImage}
-                                className="absolute -top-2 -right-2 bg-primary text-black p-1 rounded-full hover:bg-primary/80 transition-colors"
-                            >
-                                <X size={16} />
-                            </button>
-                        )}
-                    </div>
-                ) : isCameraMode ? (
-                    <div className="relative h-64 flex flex-col items-center justify-center">
-                        <Webcam
-                            audio={false}
-                            ref={webcamRef}
-                            screenshotFormat="image/jpeg"
-                            className="max-h-full max-w-full rounded object-contain mb-4"
-                            videoConstraints={{ facingMode: "user" }}
-                        />
+            {/* Image Preview View */}
+            {!isCameraMode && preview && (
+                <div className="absolute inset-0 z-10 bg-black flex items-center justify-center">
+                    <img
+                        src={preview}
+                        alt="Preview"
+                        className="max-w-full max-h-full object-contain"
+                    />
+                    {!isAnalyzing && (
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                capture();
-                            }}
-                            className="absolute bottom-4 bg-primary text-white px-4 py-2 rounded-full hover:bg-primary/80 transition-colors flex items-center gap-2"
+                            onClick={clearImage}
+                            className="absolute top-20 right-4 bg-primary text-black p-2 rounded-full hover:bg-primary/80 transition-colors z-50 shadow-lg"
                         >
-                            <Camera size={20} />
-                            Capture
+                            <X size={24} />
                         </button>
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                        <Upload size={48} className="mb-4 text-primary" />
-                        <h3 className="text-lg font-medium text-white mb-2">Upload Your Image</h3>
-                        <p className="text-sm mb-4">Drag & drop or click to select</p>
-                        <span className="text-xs text-gray-500">Supports: PNG, JPEG, JPG, WebP</span>
-                    </div>
-                )}
+                    )}
+                </div>
+            )}
+
+            {/* Upload Placeholder (if not camera and not preview - unlikely with current logic but good fallback) */}
+            {!isCameraMode && !preview && (
+                <div className="absolute inset-0 z-0 flex items-center justify-center text-gray-500">
+                    <p>No image selected</p>
+                </div>
+            )}
+
+
+            {/* Controls Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 p-8 pb-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none flex flex-col items-center justify-end h-48">
+                <div className="pointer-events-auto flex items-center gap-6">
+                    {/* Upload Button */}
+                    <button
+                        onClick={() => inputRef.current?.click()}
+                        className="p-4 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-colors"
+                        disabled={isAnalyzing}
+                        title="Upload Image"
+                    >
+                        <Upload size={24} />
+                    </button>
+
+                    {/* Capture Button (Only in Camera Mode) */}
+                    {isCameraMode && (
+                        <button
+                            onClick={capture}
+                            className="p-1 rounded-full border-4 border-white/30"
+                            disabled={isAnalyzing}
+                        >
+                            <div className="w-16 h-16 bg-primary rounded-full hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(34,211,238,0.5)]" />
+                        </button>
+                    )}
+
+                    {/* Retake/Clear Button (Only in Preview Mode) */}
+                    {!isCameraMode && preview && !isAnalyzing && (
+                        <button
+                            onClick={clearImage}
+                            className="p-4 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-colors"
+                        >
+                            <RefreshCw size={24} />
+                        </button>
+                    )}
+
+                    {/* Switch Mode Button (Optional, maybe not needed if upload is always there) */}
+                    {/* 
+                    <button
+                        onClick={toggleMode}
+                        className="p-4 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-colors"
+                    >
+                        {isCameraMode ? <ImageIcon size={24} /> : <Camera size={24} />}
+                    </button> 
+                    */}
+                </div>
             </div>
         </div>
     );
