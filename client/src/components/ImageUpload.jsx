@@ -1,11 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, Image as ImageIcon, X, Camera, RefreshCw } from 'lucide-react';
+import { Upload, Image as ImageIcon, X, Camera, RefreshCw, RotateCcw, AlertCircle } from 'lucide-react';
 import Webcam from 'react-webcam';
 
 const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
     const [dragActive, setDragActive] = useState(false);
     const [preview, setPreview] = useState(null);
-    const [isCameraMode, setIsCameraMode] = useState(true); // Default to true
+    const [isCameraMode, setIsCameraMode] = useState(true);
+    const [facingMode, setFacingMode] = useState("environment");
+    const [cameraError, setCameraError] = useState(false);
     const inputRef = useRef(null);
     const webcamRef = useRef(null);
 
@@ -51,7 +53,8 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
         reader.onload = (e) => {
             setPreview(e.target.result);
             onImageSelect(e.target.result);
-            setIsCameraMode(false); // Switch to preview mode
+            setIsCameraMode(false);
+            setCameraError(false);
         };
         reader.readAsDataURL(file);
     };
@@ -63,7 +66,8 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
         if (inputRef.current) {
             inputRef.current.value = "";
         }
-        setIsCameraMode(true); // Go back to camera
+        setIsCameraMode(true);
+        setCameraError(false);
     };
 
     const capture = useCallback(() => {
@@ -73,12 +77,14 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
         setIsCameraMode(false);
     }, [webcamRef, onImageSelect]);
 
-    const toggleMode = () => {
-        setIsCameraMode(!isCameraMode);
-        if (!isCameraMode) {
-            clearImage();
-        }
+    const toggleCamera = () => {
+        setFacingMode(prev => prev === "user" ? "environment" : "user");
     };
+
+    const handleUserMediaError = useCallback((err) => {
+        console.error("Camera error:", err);
+        setCameraError(true);
+    }, []);
 
     return (
         <div className="w-full h-full relative bg-black">
@@ -93,15 +99,36 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
             />
 
             {/* Camera View */}
-            {isCameraMode && (
+            {isCameraMode && !cameraError && (
                 <div className="absolute inset-0 z-0">
                     <Webcam
                         audio={false}
                         ref={webcamRef}
                         screenshotFormat="image/jpeg"
                         className="w-full h-full object-cover"
-                        videoConstraints={{ facingMode: "environment" }} // Use back camera on mobile if available
+                        videoConstraints={{ facingMode }}
+                        onUserMediaError={handleUserMediaError}
                     />
+                </div>
+            )}
+
+            {/* Camera Error / Permission Denied View */}
+            {isCameraMode && cameraError && (
+                <div className="absolute inset-0 z-0 flex flex-col items-center justify-center p-8 text-center bg-surface">
+                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                        <AlertCircle size={40} className="text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Camera Access Denied</h2>
+                    <p className="text-gray-400 mb-8 max-w-xs">
+                        We couldn't access your camera. Please allow camera permissions or upload an image instead.
+                    </p>
+                    <button
+                        onClick={() => inputRef.current?.click()}
+                        className="bg-primary text-black px-8 py-3 rounded-full font-medium hover:bg-primary/90 transition-colors flex items-center gap-2"
+                    >
+                        <Upload size={20} />
+                        Upload Image
+                    </button>
                 </div>
             )}
 
@@ -124,8 +151,8 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
                 </div>
             )}
 
-            {/* Upload Placeholder (if not camera and not preview - unlikely with current logic but good fallback) */}
-            {!isCameraMode && !preview && (
+            {/* Upload Placeholder (fallback) */}
+            {!isCameraMode && !preview && !cameraError && (
                 <div className="absolute inset-0 z-0 flex items-center justify-center text-gray-500">
                     <p>No image selected</p>
                 </div>
@@ -133,50 +160,54 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
 
 
             {/* Controls Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 z-20 p-8 pb-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none flex flex-col items-center justify-end h-48">
-                <div className="pointer-events-auto flex items-center gap-6">
-                    {/* Upload Button */}
-                    <button
-                        onClick={() => inputRef.current?.click()}
-                        className="p-4 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-colors"
-                        disabled={isAnalyzing}
-                        title="Upload Image"
-                    >
-                        <Upload size={24} />
-                    </button>
-
-                    {/* Capture Button (Only in Camera Mode) */}
-                    {isCameraMode && (
+            {!cameraError && (
+                <div className="absolute bottom-0 left-0 right-0 z-20 p-8 pb-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none flex flex-col items-center justify-end h-48">
+                    <div className="pointer-events-auto flex items-center gap-6">
+                        {/* Upload Button */}
                         <button
-                            onClick={capture}
-                            className="p-1 rounded-full border-4 border-white/30"
-                            disabled={isAnalyzing}
-                        >
-                            <div className="w-16 h-16 bg-primary rounded-full hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(34,211,238,0.5)]" />
-                        </button>
-                    )}
-
-                    {/* Retake/Clear Button (Only in Preview Mode) */}
-                    {!isCameraMode && preview && !isAnalyzing && (
-                        <button
-                            onClick={clearImage}
+                            onClick={() => inputRef.current?.click()}
                             className="p-4 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-colors"
+                            disabled={isAnalyzing}
+                            title="Upload Image"
                         >
-                            <RefreshCw size={24} />
+                            <Upload size={24} />
                         </button>
-                    )}
 
-                    {/* Switch Mode Button (Optional, maybe not needed if upload is always there) */}
-                    {/* 
-                    <button
-                        onClick={toggleMode}
-                        className="p-4 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-colors"
-                    >
-                        {isCameraMode ? <ImageIcon size={24} /> : <Camera size={24} />}
-                    </button> 
-                    */}
+                        {/* Capture Button (Only in Camera Mode) */}
+                        {isCameraMode && (
+                            <button
+                                onClick={capture}
+                                className="p-1 rounded-full border-4 border-white/30"
+                                disabled={isAnalyzing}
+                            >
+                                <div className="w-16 h-16 bg-primary rounded-full hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(34,211,238,0.5)]" />
+                            </button>
+                        )}
+
+                        {/* Retake/Clear Button (Only in Preview Mode) */}
+                        {!isCameraMode && preview && !isAnalyzing && (
+                            <button
+                                onClick={clearImage}
+                                className="p-4 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-colors"
+                            >
+                                <RefreshCw size={24} />
+                            </button>
+                        )}
+
+                        {/* Switch Camera Button (Only in Camera Mode) */}
+                        {isCameraMode && (
+                            <button
+                                onClick={toggleCamera}
+                                className="p-4 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-colors"
+                                disabled={isAnalyzing}
+                                title="Switch Camera"
+                            >
+                                <RotateCcw size={24} />
+                            </button>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };
