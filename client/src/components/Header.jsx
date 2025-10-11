@@ -5,8 +5,8 @@ const Header = () => {
     return (
         <header className="text-center py-6 bg-gradient-to-b from-black/80 to-transparent">
             <div className="flex justify-center mb-1">
-                <div className="flex items-center gap-2 text-primary text-2xl font-bold drop-shadow-md">
-                    {/* <Eye size={36} /> */}
+                <div className="flex items-center gap-3 text-primary text-2xl font-bold drop-shadow-md">
+                    <img src="/rekognizer-logo.png" alt="Rekognizer Logo" className="w-10 h-10 object-contain" />
                     <h1>Rekognizer</h1>
                 </div>
             </div>
