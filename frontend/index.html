@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rekognizer - AI Image Analysis</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header Section -->
+      <header class="header">
+        <div class="header-content">
+          <div class="logo">
+            <!-- <i class="fas fa-eye"></i> -->
+            <h1>Rekognizer</h1>
+          </div>
+          <p class="subtitle">
+            Advanced image analysis powered by AWS Rekognition & Google Gemini
+            AI
+          </p>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Upload and Preview Section -->
+        <div class="upload-preview-section">
+          <!-- Upload Section -->
+          <div class="upload-section">
+            <div class="upload-card">
+              <div class="upload-area" id="uploadArea">
+                <input
+                  type="file"
+                  id="imageUpload"
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                />
+                <div class="upload-content">
+                  <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                  <h3>Upload Your Image</h3>
+                  <p>Drag & drop or click to select an image</p>
+                  <span class="file-types">Supports: PNG, JPEG, JPG, WebP</span>
+                </div>
+              </div>
+              <button id="analyzeBtn" class="analyze-btn" disabled>
+                <i class="fas fa-magic"></i>
+                <span>Analyze Image</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview Section -->
+          <div class="preview-section">
+            <div class="preview-card">
+              <h3><i class="fas fa-eye"></i> Image Preview</h3>
+              <div class="image-container">
+                <!-- Preview Skeleton -->
+                <div id="previewSkeleton" class="preview-skeleton">
+                  <div class="skeleton-icon">
+                    <i class="fas fa-image"></i>
+                  </div>
+                  <p>No image selected</p>
+                  <span>Upload an image to see preview</span>
+                </div>
+                <!-- Actual Image Preview -->
+                <img
+                  id="imagePreview"
+                  src="#"
+                  alt="Image Preview"
+                  class="hidden"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="results-section hidden">
+          <div class="results-card">
+            <div class="results-header">
+              <h2><i class="fas fa-chart-line"></i> Analysis Results</h2>
+              <div class="processing-indicator" id="processingIndicator">
+                <div class="spinner"></div>
+                <span>Processing...</span>
+              </div>
+            </div>
+
+            <div id="resultContent" class="result-content hidden">
+              <!-- AI Description -->
+              <div class="result-section">
+                <div class="section-header">
+                  <i class="fas fa-robot"></i>
+                  <h3>AI Generated Description</h3>
+                </div>
+                <div class="description-box">
+                  <p id="description"></p>
+                </div>
+              </div>
+
+              <!-- Detected Labels -->
+              <div class="result-section">
+                <div class="section-header">
+                  <i class="fas fa-tags"></i>
+                  <h3>Detected Objects & Labels</h3>
+                </div>
+                <div class="labels-container">
+                  <div id="labels" class="labels-grid"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="footer-content">
+          <div class="tech-stack">
+            <span class="tech-item">
+              <i class="fab fa-aws"></i>
+              AWS Rekognition
+            </span>
+            <!-- <span class="tech-item">
+              <i class="fab fa-google"></i>
+              Google Gemini
+            </span> -->
+            <span class="tech-item">
+              <i class="fas fa-code"></i>
+              Terraform
+            </span>
+          </div>
+          <p class="footer-text">visit my portfolio to find more: https://subhro.pages.dev</p>
+        </div>
+      </footer>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
