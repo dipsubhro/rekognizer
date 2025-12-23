@@ -1,10 +1,13 @@
-import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, X } from 'lucide-react';
+import React, { useState, useRef, useCallback } from 'react';
+import { Upload, Image as ImageIcon, X, Camera, RefreshCw } from 'lucide-react';
+import Webcam from 'react-webcam';
 
 const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
     const [dragActive, setDragActive] = useState(false);
     const [preview, setPreview] = useState(null);
+    const [isCameraMode, setIsCameraMode] = useState(false);
     const inputRef = useRef(null);
+    const webcamRef = useRef(null);
 
     const handleDrag = (e) => {
         e.preventDefault();
@@ -53,7 +56,7 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
     };
 
     const clearImage = (e) => {
-        e.stopPropagation();
+        if (e) e.stopPropagation();
         setPreview(null);
         onImageSelect(null);
         if (inputRef.current) {
@@ -61,18 +64,50 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
         }
     };
 
+    const capture = useCallback(() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        setPreview(imageSrc);
+        onImageSelect(imageSrc);
+    }, [webcamRef, onImageSelect]);
+
+    const toggleMode = () => {
+        setIsCameraMode(!isCameraMode);
+        clearImage();
+    };
+
     return (
         <div className="w-full max-w-xl mx-auto mb-8">
+            <div className="flex justify-end mb-2">
+                <button
+                    onClick={toggleMode}
+                    className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+                    disabled={isAnalyzing}
+                >
+                    {isCameraMode ? (
+                        <>
+                            <Upload size={16} />
+                            Switch to Upload
+                        </>
+                    ) : (
+                        <>
+                            <Camera size={16} />
+                            Use Camera
+                        </>
+                    )}
+                </button>
+            </div>
+
             <div
-                className={`relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-          ${dragActive ? "border-primary bg-primary/10" : "border-gray-700 hover:border-gray-500 bg-surface"}
+                className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors overflow-hidden
+          ${dragActive ? "border-primary bg-primary/10" : "border-gray-700 bg-surface"}
+          ${!isCameraMode && !preview ? "hover:border-gray-500 cursor-pointer" : ""}
           ${preview ? "border-primary" : ""}
         `}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                onClick={() => inputRef.current?.click()}
+                onDragEnter={!isCameraMode ? handleDrag : undefined}
+                onDragLeave={!isCameraMode ? handleDrag : undefined}
+                onDragOver={!isCameraMode ? handleDrag : undefined}
+                onDrop={!isCameraMode ? handleDrop : undefined}
+                onClick={() => !isCameraMode && !preview && inputRef.current?.click()}
             >
                 <input
                     ref={inputRef}
@@ -98,6 +133,26 @@ const ImageUpload = ({ onImageSelect, isAnalyzing }) => {
                                 <X size={16} />
                             </button>
                         )}
+                    </div>
+                ) : isCameraMode ? (
+                    <div className="relative h-64 flex flex-col items-center justify-center">
+                        <Webcam
+                            audio={false}
+                            ref={webcamRef}
+                            screenshotFormat="image/jpeg"
+                            className="max-h-full max-w-full rounded object-contain mb-4"
+                            videoConstraints={{ facingMode: "user" }}
+                        />
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                capture();
+                            }}
+                            className="absolute bottom-4 bg-primary text-white px-4 py-2 rounded-full hover:bg-primary/80 transition-colors flex items-center gap-2"
+                        >
+                            <Camera size={20} />
+                            Capture
+                        </button>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-64 text-gray-400">
